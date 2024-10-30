@@ -1,9 +1,15 @@
+/* References: 
+https://randomnerdtutorials.com/stepper-motor-esp32-web-server/
+*/
 
-#include <ESP8266WiFi.h>
-#include <ESPAsyncTCP.h>
+//#include <ESP8266WiFi.h>
+#include <WiFi.h>
+//#include <ESPAsyncTCP.h>
+#include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
+#include <SPIFFS.h>
 
 #define WIFI_SSID "TP-Link_51CA"
 #define WIFI_PASS "password"
