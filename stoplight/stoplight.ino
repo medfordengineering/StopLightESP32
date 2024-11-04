@@ -12,7 +12,7 @@ Add EDT
 #include <WiFiUdp.h>
 #include <SPIFFS.h>
 
-#define WIFI_SSID "TP-Link_51CA"
+#define WIFI_SSID "EngineeringSubNet"
 #define WIFI_PASS "password"
 
 //#define WIFI_SSID "timesink2"
