@@ -24,9 +24,9 @@ Add EDT
 #define WARNING_TIME 5
 #define CLEANING_TIME 13
 
-#define GRN_LIGHT 4
-#define YEL_LIGHT 15
-#define RED_LIGHT 5
+#define GRN_LIGHT 3  // 4 8266
+#define YEL_LIGHT 10 // 15 8266
+#define RED_LIGHT 4  // 5 8266
 #define NOT_LIGHT 0
 
 #define MAR 3
