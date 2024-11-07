@@ -243,8 +243,6 @@ uint16_t total_minutes(uint8_t hrs, uint8_t mns) {
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial)
-    ;
 
   //TRIED TO SET HOSTNMAME BUT FAILED
   // WiFi.mode(WIFI_STA);
