@@ -24,9 +24,9 @@ Add EDT
 #define WARNING_TIME 5
 #define CLEANING_TIME 13
 
-#define GRN_LIGHT 3  // 4 8266
-#define YEL_LIGHT 10 // 15 8266
-#define RED_LIGHT 4  // 5 8266
+#define GRN_LIGHT 3   // 4 8266
+#define YEL_LIGHT 10  // 15 8266
+#define RED_LIGHT 4   // 5 8266
 #define NOT_LIGHT 0
 
 #define MAR 3
@@ -363,6 +363,8 @@ String processor(const String& var) {
 
 void loop() {
 
+  if (WiFi.status() != WL_CONNECTED) ESP.restart();
+
   // Get time
   timeClient.update();
   hrs = timeClient.getHours();
@@ -393,96 +395,95 @@ void loop() {
       timeClient.setTimeOffset(EDT);
       est_state = false;
     }
-}
-else {
-  if ((est_state == false) || (est_state == NOTSET)) {
-    timeClient.setTimeOffset(EST);
-    est_state = true;
+  } else {
+    if ((est_state == false) || (est_state == NOTSET)) {
+      timeClient.setTimeOffset(EST);
+      est_state = true;
+    }
   }
-}
 
-uint16_t minuteTime = total_minutes(hrs, mns);
+  uint16_t minuteTime = total_minutes(hrs, mns);
 
-delay(500);
+  delay(500);
 
-Serial.printf("%02d:%02d:%02d:%02d:%02d:%s:%02d:%02d\n", hrs, mns, scs, minuteTime, sch_index, stateNames[state], sch_str, sch_end);
+  Serial.printf("%02d:%02d:%02d:%02d:%02d:%s:%02d:%02d\n", hrs, mns, scs, minuteTime, sch_index, stateNames[state], sch_str, sch_end);
 
-switch (state) {
-  case NOSTATE:
-    // Sets time in minutes for start of school, end of school, and start of clean up.
-    day_str = total_minutes(schedules[sch_str][HOURS], schedules[sch_str][MINUTES]);
-    day_end = total_minutes(schedules[sch_end][HOURS], schedules[sch_end][MINUTES]);
-    day_cln = day_end - CLEANING_TIME;
+  switch (state) {
+    case NOSTATE:
+      // Sets time in minutes for start of school, end of school, and start of clean up.
+      day_str = total_minutes(schedules[sch_str][HOURS], schedules[sch_str][MINUTES]);
+      day_end = total_minutes(schedules[sch_end][HOURS], schedules[sch_end][MINUTES]);
+      day_cln = day_end - CLEANING_TIME;
 
-    // Determines which block of the day based on a given time and schedule
-    for (sch_index = sch_str; sch_index <= sch_end; sch_index += 2) {
-      if (minuteTime <= total_minutes(schedules[sch_index][HOURS], schedules[sch_index][MINUTES])) break;
-    }
-    sch_index -= 2;
-
-    // Checks to see if we are outside of school time on in last period (special case)
-    if (minuteTime < day_str)
-      state = BEFORESCHOOL;
-    else if (minuteTime > day_end)
-      state = AFTERSCHOOL;
-    else if (sch_index == (sch_end - 1))  //USE LESS THAN INSTEAD?
-      state = LAST_PERIOD;
-    else
-      state = PERIOD_RESET;
-    break;
-  // Based on block calculate start, end, warning and next period times in minutes
-  case PERIOD_RESET:
-    period_str = total_minutes(schedules[sch_index + 0][HOURS], schedules[sch_index + 0][MINUTES]);
-    period_end = total_minutes(schedules[sch_index + 1][HOURS], schedules[sch_index + 1][MINUTES]);
-    period_wrn = period_end - WARNING_TIME;
-    period_nxt = total_minutes(schedules[sch_index + 2][HOURS], schedules[sch_index + 2][MINUTES]);
-    state = INCLASS;
-    turn_on(GRN_LIGHT);  //Assume green as default. This will get corrected below.
-    break;
-  case INCLASS:
-    if (minuteTime >= period_wrn) {
-      state = WARNING;
-      turn_on(YEL_LIGHT);
-    }
-    break;
-  case WARNING:
-    if (minuteTime >= period_end) {
-      state = PASSING;
-      turn_on(RED_LIGHT);
-    }
-    break;
-  case PASSING:
-    if (minuteTime >= period_nxt) {  // Move to next block and reset all block values
-      state = PERIOD_RESET;
-      sch_index += 2;
-      if (sch_index == (sch_end - 1)) {  // Last period is a special case, since it has no next period time value. //USE LESS THAN INSTEAD?
-        state = LAST_PERIOD;
-        turn_on(GRN_LIGHT);
+      // Determines which block of the day based on a given time and schedule
+      for (sch_index = sch_str; sch_index <= sch_end; sch_index += 2) {
+        if (minuteTime <= total_minutes(schedules[sch_index][HOURS], schedules[sch_index][MINUTES])) break;
       }
-    }
-    break;
-  case LAST_PERIOD:
-    if (minuteTime >= day_cln) {
-      state = CLEANUP;
-      turn_on(YEL_LIGHT);
-    }
-    break;
-  case CLEANUP:
-    if (minuteTime >= day_end) {
-      state = AFTERSCHOOL;
-      turn_on(NOT_LIGHT);
-    }
-    break;
-  case AFTERSCHOOL:
-    if (minuteTime == MIDNIGHT) {
-      state = BEFORESCHOOL;
-    }
-    break;
-  case BEFORESCHOOL:
-    if (minuteTime >= day_str) {
-      state = PERIOD_RESET;
-      sch_index = sch_str;
-    }
-    break;
-}
+      sch_index -= 2;
+
+      // Checks to see if we are outside of school time on in last period (special case)
+      if (minuteTime < day_str)
+        state = BEFORESCHOOL;
+      else if (minuteTime > day_end)
+        state = AFTERSCHOOL;
+      else if (sch_index == (sch_end - 1))  //USE LESS THAN INSTEAD?
+        state = LAST_PERIOD;
+      else
+        state = PERIOD_RESET;
+      break;
+    // Based on block calculate start, end, warning and next period times in minutes
+    case PERIOD_RESET:
+      period_str = total_minutes(schedules[sch_index + 0][HOURS], schedules[sch_index + 0][MINUTES]);
+      period_end = total_minutes(schedules[sch_index + 1][HOURS], schedules[sch_index + 1][MINUTES]);
+      period_wrn = period_end - WARNING_TIME;
+      period_nxt = total_minutes(schedules[sch_index + 2][HOURS], schedules[sch_index + 2][MINUTES]);
+      state = INCLASS;
+      turn_on(GRN_LIGHT);  //Assume green as default. This will get corrected below.
+      break;
+    case INCLASS:
+      if (minuteTime >= period_wrn) {
+        state = WARNING;
+        turn_on(YEL_LIGHT);
+      }
+      break;
+    case WARNING:
+      if (minuteTime >= period_end) {
+        state = PASSING;
+        turn_on(RED_LIGHT);
+      }
+      break;
+    case PASSING:
+      if (minuteTime >= period_nxt) {  // Move to next block and reset all block values
+        state = PERIOD_RESET;
+        sch_index += 2;
+        if (sch_index == (sch_end - 1)) {  // Last period is a special case, since it has no next period time value. //USE LESS THAN INSTEAD?
+          state = LAST_PERIOD;
+          turn_on(GRN_LIGHT);
+        }
+      }
+      break;
+    case LAST_PERIOD:
+      if (minuteTime >= day_cln) {
+        state = CLEANUP;
+        turn_on(YEL_LIGHT);
+      }
+      break;
+    case CLEANUP:
+      if (minuteTime >= day_end) {
+        state = AFTERSCHOOL;
+        turn_on(NOT_LIGHT);
+      }
+      break;
+    case AFTERSCHOOL:
+      if (minuteTime == MIDNIGHT) {
+        state = BEFORESCHOOL;
+      }
+      break;
+    case BEFORESCHOOL:
+      if (minuteTime >= day_str) {
+        state = PERIOD_RESET;
+        sch_index = sch_str;
+      }
+      break;
+  }
 }
