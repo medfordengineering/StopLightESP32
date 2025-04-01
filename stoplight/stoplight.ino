@@ -363,6 +363,7 @@ String processor(const String& var) {
 
 void loop() {
 
+// TESTING A RESET OPTION
   if (WiFi.status() != WL_CONNECTED) ESP.restart();
 
   // Get time
